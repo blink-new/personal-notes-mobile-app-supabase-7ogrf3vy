@@ -6,79 +6,74 @@ import {
   TextInput,
   ScrollView,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Search, X, Clock, TrendingUp } from 'lucide-react-native';
+import { supabase } from '../../supabase/supabase';
 
-const mockNotes = [
-  {
-    id: '1',
-    title: 'Welcome to Notes!',
-    content: 'This is your first note. Tap to edit or create a new one using the + button.',
-    createdAt: new Date('2024-01-15'),
-  },
-  {
-    id: '2',
-    title: 'Ideas for Tomorrow',
-    content: 'Remember to review project proposals, call mom, buy groceries, plan weekend trip',
-    createdAt: new Date('2024-01-14'),
-  },
-  {
-    id: '3',
-    title: 'Meeting Notes',
-    content: 'Discussed quarterly goals, budget allocation, team restructuring, and upcoming product launches',
-    createdAt: new Date('2024-01-13'),
-  },
-];
-
-const recentSearches = ['meeting', 'ideas', 'project'];
-const trendingSearches = ['productivity', 'goals', 'planning'];
+interface Note {
+  id: string;
+  user_id: string;
+  title: string;
+  content: string;
+  created_at: string;
+  updated_at: string;
+}
 
 export default function SearchScreen() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<typeof mockNotes>([]);
+  const [searchResults, setSearchResults] = useState<Note[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleSearch = (query: string) => {
+  async function handleSearch(query: string) {
     setSearchQuery(query);
     setIsSearching(query.length > 0);
-    
+    setLoading(query.length > 0);
+    setSearchResults([]); // Clear previous results
+
     if (query.trim().length > 0) {
-      const results = mockNotes.filter(note =>
-        note.title.toLowerCase().includes(query.toLowerCase()) ||
-        note.content.toLowerCase().includes(query.toLowerCase())
-      );
-      setSearchResults(results);
+      const { data, error } = await supabase
+        .from('notes')
+        .select('id, user_id, title, content, created_at, updated_at')
+        .or(
+          `title.ilike.%${query}%,content.ilike.%${query}%`
+        )
+        .order('updated_at', { ascending: false });
+
+      if (error) {
+        console.error('Error searching notes:', error);
+        Alert.alert('Error', 'Failed to search notes.');
+        setSearchResults([]);
+      } else {
+        setSearchResults(data as Note[]);
+      }
+      setLoading(false);
     } else {
       setSearchResults([]);
+      setLoading(false);
     }
-  };
+  }
 
   const clearSearch = () => {
     setSearchQuery('');
     setSearchResults([]);
     setIsSearching(false);
+    setLoading(false);
   };
 
   const handleQuickSearch = (query: string) => {
     handleSearch(query);
   };
 
-  const formatDate = (date: Date) => {
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
+      year: 'numeric',
     });
-  };
-
-  const highlightText = (text: string, query: string) => {
-    if (!query) return text;
-    
-    const parts = text.split(new RegExp(`(${query})`, 'gi'));
-    return parts.map((part, index) => 
-      part.toLowerCase() === query.toLowerCase() ? 
-        `**${part}**` : part
-    ).join('');
   };
 
   return (
@@ -107,7 +102,11 @@ export default function SearchScreen() {
       </View>
       
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {!isSearching ? (
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <Text style={styles.loadingText}>Searching...</Text>
+          </View>
+        ) : !isSearching ? (
           <>
             {/* Recent Searches */}
             <View style={styles.section}>
@@ -116,15 +115,13 @@ export default function SearchScreen() {
                 <Text style={styles.sectionTitle}>Recent</Text>
               </View>
               <View style={styles.chipContainer}>
-                {recentSearches.map((search, index) => (
-                  <TouchableOpacity
-                    key={index}
-                    style={styles.chip}
-                    onPress={() => handleQuickSearch(search)}
-                  >
-                    <Text style={styles.chipText}>{search}</Text>
-                  </TouchableOpacity>
-                ))}
+                {/* Replace with actual recent searches from user history if implemented */}
+                <TouchableOpacity
+                  style={styles.chip}
+                  onPress={() => handleQuickSearch('example')}
+                >
+                  <Text style={styles.chipText}>example</Text>
+                </TouchableOpacity>
               </View>
             </View>
             
@@ -135,15 +132,13 @@ export default function SearchScreen() {
                 <Text style={styles.sectionTitle}>Trending</Text>
               </View>
               <View style={styles.chipContainer}>
-                {trendingSearches.map((search, index) => (
-                  <TouchableOpacity
-                    key={index}
-                    style={styles.chip}
-                    onPress={() => handleQuickSearch(search)}
-                  >
-                    <Text style={styles.chipText}>{search}</Text>
-                  </TouchableOpacity>
-                ))}
+                 {/* Replace with actual trending searches if implemented */}
+                 <TouchableOpacity
+                  style={styles.chip}
+                  onPress={() => handleQuickSearch('ideas')}
+                >
+                  <Text style={styles.chipText}>ideas</Text>
+                </TouchableOpacity>
               </View>
             </View>
           </>
@@ -170,7 +165,7 @@ export default function SearchScreen() {
                     <Text style={styles.resultContent} numberOfLines={2}>
                       {note.content}
                     </Text>
-                    <Text style={styles.resultDate}>{formatDate(note.createdAt)}</Text>
+                    <Text style={styles.resultDate}>{formatDate(note.created_at)}</Text>
                   </TouchableOpacity>
                 ))
               )}
@@ -302,5 +297,15 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#8E8E93',
     textAlign: 'center',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  loadingText: {
+    fontSize: 18,
+    color: '#8E8E93',
   },
 });
