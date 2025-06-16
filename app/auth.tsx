@@ -1,3 +1,145 @@
-import { useState } from \'react\';\nimport { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from \'react-native\';\nimport { SafeAreaView } from \'react-native-safe-area-context\';\nimport { supabase } from \'../supabase/supabase\';\nimport { LinearGradient } from \'expo-linear-gradient\';\nimport { Mail, Lock } from \'lucide-react-native\';\n\nexport default function AuthScreen() {\n  const [email, setEmail] = useState(\'\');\n  const [password, setPassword] = useState(\'\');\n  const [loading, setLoading] = useState(false);\n  const [isSignUp, setIsSignUp] = useState(false);\n\n  async function signInWithEmail() {\n    setLoading(true);\n    const { error } = await supabase.auth.signInWithPassword({ email, password });\n\n    if (error) Alert.alert(error.message);\n    setLoading(false);\n  }\n\n  async function signUpWithEmail() {\n    setLoading(true);\n    const { error } = await supabase.auth.signUp({ email, password });\n\n    if (error) Alert.alert(error.message);\n    setLoading(false);\n  }\n\n  return (\n    <LinearGradient\n      colors={[\'#667eea\', \'#764ba2\']}\n      style={styles.container}\n    >\n      <SafeAreaView style={styles.safeArea}>\n        <View style={styles.content}>\n          <Text style={styles.title}>{isSignUp ? \'Sign Up\' : \'Sign In\'}</Text>\n\n          <View style={styles.inputContainer}>\n            <Mail color=\"#8E8E93\" size={20} style={styles.inputIcon} />\n            <TextInput\n              style={styles.input}\n              onChangeText={setEmail}\n              value={email}\n              placeholder=\"Email\"\n              placeholderTextColor=\"#8E8E93\"\n              autoCapitalize={\'none\'}\n              keyboardType=\"email-address\"\n            />\n          </View>\n\n          <View style={styles.inputContainer}>\n            <Lock color=\"#8E8E93\" size={20} style={styles.inputIcon} />\n            <TextInput\n              style={styles.input}\n              onChangeText={setPassword}\n              value={password}\n              secureTextEntry={true}\n              placeholder=\"Password\"\n              placeholderTextColor=\"#8E8E93\"\n              autoCapitalize={\'none\'}\n            />\n          </View>\n\n          <TouchableOpacity\n            style={styles.button}\n            onPress={isSignUp ? signUpWithEmail : signInWithEmail}\n            disabled={loading}\n            activeOpacity={0.8}\n          >\n            <Text style={styles.buttonText}>\n              {loading ? \'Loading...\' : isSignUp ? \'Sign Up\' : \'Sign In\'}\n            </Text>\n          </TouchableOpacity>\n\n          <TouchableOpacity onPress={() => setIsSignUp(!isSignUp)}>\n            <Text style={styles.toggleText}>\n              {isSignUp\n                ? \'Already have an account? Sign In\'\n                : \'Don\'t have an account? Sign Up\'}\n            </Text>\n          </TouchableOpacity>\n        </View>\n      </SafeAreaView>\n    </LinearGradient>\n  );\n}\n\nconst styles = StyleSheet.create({\n  container: {\n    flex: 1,\n  },\n  safeArea: {\n    flex: 1,\n  },\n  content: {\n    flex: 1,\n    justifyContent: \'center\',\n    alignItems: \'center\',\n    paddingHorizontal: 32,\n  },\n  title: {\n    fontSize: 32,\n    fontWeight: \'bold\',\
-    color: \'#fff\',\n    marginBottom: 32,\n  },\n  inputContainer: {\n    flexDirection: \'row\',\n    alignItems: \'center\',\n    backgroundColor: \'#fff\',\n    borderRadius: 12,\n    paddingHorizontal: 16,\n    marginBottom: 16,\n    width: \'100%\',\n    height: 50,\n  },\n  inputIcon: {\n    marginRight: 12,\n  },\n  input: {\n    flex: 1,\n    fontSize: 16,\n    color: \'#000\',\n  },\n  button: {\n    backgroundColor: \'#007AFF\',\n    paddingHorizontal: 32,\n    paddingVertical: 16,\n    borderRadius: 12,\n    marginBottom: 24,\n    width: \'100%\',\n    alignItems: \'center\',\n  },\n  buttonText: {\n    fontSize: 18,\n    fontWeight: \'600\',\
-    color: \'#fff\',\n  },\n  toggleText: {\n    fontSize: 16,\n    color: \'#fff\',\n    opacity: 0.9,\n  },\n});
+import { useState } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { supabase } from '../supabase/supabase';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Mail, Lock } from 'lucide-react-native';
+
+export default function AuthScreen() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(false);
+
+  async function signInWithEmail() {
+    setLoading(true);
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+
+    if (error) Alert.alert(error.message);
+    setLoading(false);
+  }
+
+  async function signUpWithEmail() {
+    setLoading(true);
+    const { error } = await supabase.auth.signUp({ email, password });
+
+    if (error) Alert.alert(error.message);
+    setLoading(false);
+  }
+
+  return (
+    <LinearGradient
+      colors={['#667eea', '#764ba2']}
+      style={styles.container}
+    >
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.content}>
+          <Text style={styles.title}>{isSignUp ? 'Sign Up' : 'Sign In'}</Text>
+
+          <View style={styles.inputContainer}>
+            <Mail color="#8E8E93" size={20} style={styles.inputIcon} />
+            <TextInput
+              style={styles.input}
+              onChangeText={setEmail}
+              value={email}
+              placeholder="Email"
+              placeholderTextColor="#8E8E93"
+              autoCapitalize={'none'}
+              keyboardType="email-address"
+            />
+          </View>
+
+          <View style={styles.inputContainer}>
+            <Lock color="#8E8E93" size={20} style={styles.inputIcon} />
+            <TextInput
+              style={styles.input}
+              onChangeText={setPassword}
+              value={password}
+              secureTextEntry={true}
+              placeholder="Password"
+              placeholderTextColor="#8E8E93"
+              autoCapitalize={'none'}
+            />
+          </View>
+
+          <TouchableOpacity
+            style={styles.button}
+            onPress={isSignUp ? signUpWithEmail : signInWithEmail}
+            disabled={loading}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.buttonText}>
+              {loading ? 'Loading...' : isSignUp ? 'Sign Up' : 'Sign In'}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity onPress={() => setIsSignUp(!isSignUp)}>
+            <Text style={styles.toggleText}>
+              {isSignUp
+                ? 'Already have an account? Sign In'
+                : 'Don\'t have an account? Sign Up'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    </LinearGradient>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  safeArea: {
+    flex: 1,
+  },
+  content: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 32,
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 32,
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    marginBottom: 16,
+    width: '100%',
+    height: 50,
+  },
+  inputIcon: {
+    marginRight: 12,
+  },
+  input: {
+    flex: 1,
+    fontSize: 16,
+    color: '#000',
+  },
+  button: {
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 32,
+    paddingVertical: 16,
+    borderRadius: 12,
+    marginBottom: 24,
+    width: '100%',
+    alignItems: 'center',
+  },
+  buttonText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#fff',
+  },
+  toggleText: {
+    fontSize: 16,
+    color: '#fff',
+    opacity: 0.9,
+  },
+});
