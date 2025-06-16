@@ -14,10 +14,11 @@ import { supabase } from '../../supabase/supabase';
 
 interface Note {
   id: string;
+  user_id: string;
   title: string;
   content: string;
-  createdAt: string;
-  updatedAt: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export default function NotesScreen() {
@@ -30,13 +31,48 @@ export default function NotesScreen() {
 
   useEffect(() => {
     fetchNotes();
+
+    const subscription = supabase
+      .channel('notes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'notes' },
+        (payload) => {
+          console.log('Change received!', payload);
+          const newNote = payload.new as Note;
+          const oldNote = payload.old as Note;
+
+          switch (payload.eventType) {
+            case 'INSERT':
+              setNotes(prevNotes => [newNote, ...prevNotes]);
+              break;
+            case 'UPDATE':
+              setNotes(prevNotes =>
+                prevNotes.map(note => (note.id === newNote.id ? newNote : note))
+              );
+              break;
+            case 'DELETE':
+              setNotes(prevNotes =>
+                prevNotes.filter(note => note.id !== oldNote.id)
+              );
+              break;
+            default:
+              break;
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(subscription);
+    };
   }, []);
 
   async function fetchNotes() {
     setLoading(true);
     const { data, error } = await supabase
       .from('notes')
-      .select('id, title, content, created_at, updated_at')
+      .select('id, user_id, title, content, created_at, updated_at')
       .order('updated_at', { ascending: false });
 
     if (error) {
@@ -81,20 +117,13 @@ export default function NotesScreen() {
       console.error('Error saving note:', error);
       Alert.alert('Error', 'Failed to save note.');
     } else {
-      fetchNotes();
+      // No need to fetchNotes() here, real-time subscription will update
       setIsCreating(false);
       setEditingNote(null);
       setNewTitle('');
       setNewContent('');
     }
     setLoading(false);
-  }
-
-  async function handleEditNote(note: Note) {
-    setEditingNote(note);
-    setNewTitle(note.title);
-    setNewContent(note.content);
-    setIsCreating(true);
   }
 
   async function handleDeleteNote(noteId: string) {
@@ -117,7 +146,7 @@ export default function NotesScreen() {
               console.error('Error deleting note:', error);
               Alert.alert('Error', 'Failed to delete note.');
             } else {
-              setNotes(prev => prev.filter(note => note.id !== noteId));
+              // No need to update state here, real-time subscription will handle it
             }
             setLoading(false);
           },
