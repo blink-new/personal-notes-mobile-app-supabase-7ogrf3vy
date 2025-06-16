@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -23,13 +23,33 @@ import {
   Download,
   Trash2
 } from 'lucide-react-native';
+import { supabase } from '../../supabase/supabase';
 
 export default function ProfileScreen() {
   const [darkMode, setDarkMode] = useState(false);
   const [notifications, setNotifications] = useState(true);
   const [autoSync, setAutoSync] = useState(true);
+  const [user, setUser] = useState<any>(null);
 
-  const handleLogout = () => {
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        setUser(session.user);
+      }
+    });
+
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setUser(session?.user || null);
+      }
+    );
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, []);
+
+  async function handleLogout() {
     Alert.alert(
       'Sign Out',
       'Are you sure you want to sign out?',
@@ -38,14 +58,17 @@ export default function ProfileScreen() {
         {
           text: 'Sign Out',
           style: 'destructive',
-          onPress: () => {
-            // Handle logout
-            Alert.alert('Success', 'You have been signed out');
+          onPress: async () => {
+            const { error } = await supabase.auth.signOut();
+            if (error) {
+              console.error('Error signing out:', error);
+              Alert.alert('Error', 'Failed to sign out.');
+            }
           },
         },
       ]
     );
-  };
+  }
 
   const handleExportData = () => {
     Alert.alert('Export Data', 'Your notes will be exported as a backup file');
@@ -131,9 +154,9 @@ export default function ProfileScreen() {
           <View style={styles.avatar}>
             <User color="#fff" size={32} />
           </View>
-          <Text style={styles.profileName}>John Doe</Text>
-          <Text style={styles.profileEmail}>john.doe@example.com</Text>
-          <Text style={styles.profileStats}>24 notes • Joined Jan 2024</Text>
+          <Text style={styles.profileName}>{user?.email || 'Guest'}</Text>
+          <Text style={styles.profileEmail}>{user?.email || 'Sign in to see your profile'}</Text>
+          {/* <Text style={styles.profileStats}>24 notes • Joined Jan 2024</Text> */}
         </View>
 
         {/* App Settings */}
